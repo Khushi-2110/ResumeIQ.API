@@ -1,0 +1,99 @@
+﻿@{
+    ViewData["Title"] = "AI-Powered Resume Intelligence";
+}
+
+<!-- Hero Section -->
+<div class="py-5 text-center bg-light border-bottom mb-5 rounded-4 shadow-sm">
+    <div class="container py-4">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-3">
+            Next-Gen Career Intelligence
+        </span>
+        <h1 class="display-4 fw-bold text-dark mb-3">
+            Optimize Your Resume with <span class="text-primary">Gemini AI</span>
+        </h1>
+        <p class="lead text-muted mx-auto mb-4" style="max-width: 650px;">
+            Harness real-time ATS parsing, bias-free profile scoring, and intelligent job matching to accelerate your technical career.
+        </p>
+
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <!-- Upload Box for Authenticated Users -->
+            <div class="card shadow-lg border-0 rounded-4 mx-auto p-4" style="max-width: 550px;">
+                <h5 class="fw-bold mb-3">Analyze Your Document</h5>
+                <form asp-controller="Home" asp-action="Upload" method="post" enctype="multipart/form-data">
+                    <div class="input-group mb-3">
+                        <input type="file" name="resumeFile" class="form-control" accept=".pdf,.docx" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold">
+                        <i class="bi bi-lightning-charge me-2"></i>Run ATS Analysis
+                    </button>
+                </form>
+
+                <!-- Spinner -->
+                <div id="loading-spinner" class="d-none text-center mt-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <h6 class="mt-2 fw-bold text-secondary" id="loading-text">Extracting PDF structures...</h6>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Call to Action for Visitors -->
+            <div class="d-flex justify-content-center gap-3">
+                <a asp-controller="Auth" asp-action="Login" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow-sm">
+                    Get Started Free <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+                <a asp-controller="Auth" asp-action="Register" class="btn btn-outline-secondary btn-lg px-4 py-3 rounded-pill">
+                    Create Account
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Feature Section -->
+<div class="container pb-5">
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 rounded-4">
+                <div class="fs-1 text-primary mb-3">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h5 class="fw-bold">ATS Scoring Engine</h5>
+                <p class="text-muted small">Evaluates keyword density, layout parsability, and structural completeness against modern ATS standards.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 rounded-4">
+                <div class="fs-1 text-primary mb-3">
+                    <i class="bi bi-patch-check"></i>
+                </div>
+                <h5 class="fw-bold">Substantiation Engine</h5>
+                <p class="text-muted small">Cross-verifies listed skills against actual project experience and quantitative metrics.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 rounded-4">
+                <div class="fs-1 text-primary mb-3">
+                    <i class="bi bi-sliders"></i>
+                </div>
+                <h5 class="fw-bold">Responsible AI Rationale</h5>
+                <p class="text-muted small">Generates transparent scoring explanations and actionable recommendations to guide improvement.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (document.querySelector('form')) {
+        document.querySelector('form').addEventListener('submit', function() {
+            document.querySelector('button[type="submit"]').classList.add('d-none');
+            document.getElementById('loading-spinner').classList.remove('d-none');
+
+            setTimeout(() => document.getElementById('loading-text').innerText = "Gemini AI analyzing semantics...", 1500);
+            setTimeout(() => document.getElementById('loading-text').innerText = "Validating substantiation metrics...", 3500);
+            setTimeout(() => document.getElementById('loading-text').innerText = "Finalizing dashboard...", 5000);
+        });
+    }
+</script>
+

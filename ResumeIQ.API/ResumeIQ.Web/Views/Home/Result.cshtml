@@ -1,0 +1,170 @@
+﻿@model ResumeIQ.Web.Models.ResultViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "ATS Analysis Dashboard";
+
+    // Attempt dynamic parse
+    JsonElement root = default;
+    bool isValidJson = false;
+    try
+    {
+        if (!string.IsNullOrWhiteSpace(Model.AiFeedback))
+        {
+            using var doc = JsonDocument.Parse(Model.AiFeedback);
+            root = doc.RootElement.Clone();
+            isValidJson = true;
+        }
+    }
+    catch { isValidJson = false; }
+}
+
+<div class="container py-4">
+    @if (isValidJson)
+    {
+        var name = root.TryGetProperty("candidate_name", out var n) ? n.GetString() : "Candidate";
+        var role = root.TryGetProperty("target_role", out var r) ? r.GetString() : "Target Role";
+        var score = root.TryGetProperty("overall_ats_score", out var s) ? s.GetInt32() : 0;
+
+        string badgeClass = score >= 80 ? "bg-success" : score >= 60 ? "bg-warning text-dark" : "bg-danger";
+
+        <!-- Top Header Banner -->
+        <div class="card border-0 shadow-sm mb-4 bg-primary text-white rounded-4">
+            <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="fw-bold mb-1">@name</h2>
+                    <p class="mb-0 opacity-75 fs-5"><i class="bi bi-briefcase me-2"></i>@role</p>
+                </div>
+                <div class="text-center mt-3 mt-md-0">
+                    <span class="badge @badgeClass fs-3 px-4 py-2 rounded-pill shadow-sm">
+                        ATS Score: @score / 100
+                    </span>
+                </div>
+            </div>
+        </div>
+       
+        <div class="alert alert-info mb-4 border-0 shadow-sm rounded-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>AI Rationale:</strong> @(root.TryGetProperty("ai_decision_rationale", out var rationale) ? rationale.GetString() : "Analysis complete.")
+        </div>
+       
+
+        <div class="row g-4">
+            <!-- Score Breakdown Section -->
+            @if (root.TryGetProperty("score_breakdown", out var breakdown))
+            {
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white border-0 pt-4 pb-0">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Detailed Score Breakdown</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            @foreach (var prop in breakdown.EnumerateObject())
+                            {
+                                var label = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(prop.Name.Replace("_", " "));
+                                var val = prop.Value.GetInt32();
+                                var barColor = val >= 80 ? "bg-success" : val >= 60 ? "bg-warning" : "bg-danger";
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-medium text-secondary">@label</span>
+                                        <span class="fw-bold">@val%</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px; border-radius: 8px;">
+                                        <div class="progress-bar @barColor" role="progressbar" style="width: @val%" aria-valuenow="@val" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Parsability Overview -->
+            @if (root.TryGetProperty("ats_parsability_analysis", out var parsability))
+            {
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white border-0 pt-4 pb-0">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-check2-circle text-success me-2"></i>ATS Parsability Checklist</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var prop in parsability.EnumerateObject())
+                                {
+                                    var itemLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(prop.Name.Replace("_", " "));
+                                    var isOk = prop.Value.ValueKind == JsonValueKind.True || (prop.Value.ValueKind == JsonValueKind.String && prop.Value.GetString()?.ToLower() == "true");
+
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                                        <span class="text-secondary">@itemLabel</span>
+                                        @if (isOk)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Detected</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">Check Needed</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="text-center mt-5">
+            <a asp-action="Index" class="btn btn-primary btn-lg px-5 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-arrow-repeat me-2"></i>Upload Another Resume
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-dark btn-lg px-5 py-2 rounded-pill shadow-sm ms-2">
+                <i class="bi bi-printer me-2"></i>Export AI Report
+            </button>
+
+        </div>
+    }
+    else
+    {
+        <!-- Markdown Output for Job Matcher -->
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-file-text me-2"></i>Job Match Analysis</h4>
+
+                <!-- Hidden raw markdown -->
+                <div id="raw-markdown" class="d-none">@Model.AiFeedback</div>
+
+                <!-- Where the beautiful HTML will render -->
+                <div id="formatted-output" class="bg-light p-4 rounded" style="font-size: 1.1rem; line-height: 1.6;"></div>
+
+                <div class="text-center mt-4">
+                    <a asp-action="JobMatch" class="btn btn-outline-primary rounded-pill px-4 me-2">Analyze Another Job</a>
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">Upload New Resume</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lightweight Markdown Parser -->
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    var rawText = document.getElementById('raw-markdown').innerText;
+                    document.getElementById('formatted-output').innerHTML = marked.parse(rawText);
+                });
+        </script>
+    }
+    <style>
+            @@media print {
+                nav, button, .btn, footer {
+                    display: none !important;
+                }
+
+                body {
+                    background-color: white !important;
+                }
+
+                .card {
+                    box-shadow: none !important;
+                    border: 1px solid #ddd !important;
+                }
+            }
+    </style>
