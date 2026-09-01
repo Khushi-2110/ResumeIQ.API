@@ -1,8 +1,7 @@
-﻿@{
+@{
     ViewData["Title"] = "AI-Powered Resume Intelligence";
 }
 
-<!-- Hero Section -->
 <div class="py-5 text-center bg-light border-bottom mb-5 rounded-4 shadow-sm">
     <div class="container py-4">
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-3">
@@ -84,16 +83,38 @@
     </div>
 </div>
 
-<script>
-    if (document.querySelector('form')) {
-        document.querySelector('form').addEventListener('submit', function() {
-            document.querySelector('button[type="submit"]').classList.add('d-none');
-            document.getElementById('loading-spinner').classList.remove('d-none');
+ <script>
+    // Target ALL forms on the page so both ATS and Job Matcher trigger the spinner
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) { // 'e' added here to capture the submit event
 
-            setTimeout(() => document.getElementById('loading-text').innerText = "Gemini AI analyzing semantics...", 1500);
-            setTimeout(() => document.getElementById('loading-text').innerText = "Validating substantiation metrics...", 3500);
-            setTimeout(() => document.getElementById('loading-text').innerText = "Finalizing dashboard...", 5000);
+            const fileInput = form.querySelector('input[type="file"]');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const spinner = document.getElementById('loading-spinner');
+            const loadingText = document.getElementById('loading-text');
+
+            // 1. File Size Validation
+            if (fileInput && fileInput.files.length > 0) {
+                // 5 * 1024 * 1024 = exactly 5 Megabytes in bytes
+                if (fileInput.files[0].size > 5 * 1024 * 1024) {
+                    e.preventDefault(); // Cancels the form submission completely
+                    alert("Evaluation Security: File size exceeds the 5MB limit. Please upload a smaller file.");
+                    return; // Exits the function so the spinner never appears
+                }
+            }
+
+            // 2. UI Updates (Hide button, show spinner)
+            if (submitBtn) submitBtn.classList.add('d-none');
+            if (spinner) spinner.classList.remove('d-none');
+
+            // 3. Dynamic Text Updates
+            if (loadingText) {
+                setTimeout(() => loadingText.innerText = "Gemini AI analyzing semantics...", 1500);
+                setTimeout(() => loadingText.innerText = "Validating substantiation metrics...", 3500);
+                setTimeout(() => loadingText.innerText = "Finalizing dashboard...", 5000);
+            }
         });
-    }
+    });
 </script>
 
+   
